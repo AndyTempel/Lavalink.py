@@ -64,6 +64,7 @@ class WebSocket:
                                                self._max_reconn_attempts)
             )
 
+            # noinspection PyBroadException
             try:
                 self._ws = await self._session.ws_connect('ws://{}:{}'.format(self._host, self._port), headers=headers,
                                                           heartbeat=60)
@@ -87,6 +88,11 @@ class WebSocket:
                                                    'indicates that the remote server is a webserver '
                                                    'and not Lavalink. Check your ports, and try again.'
                                                    .format(self._node.name, ce.status))
+                backoff = min(10 * attempt, 60)
+                await asyncio.sleep(backoff)
+            except Exception as e:  # pylint: disable=broad-except
+                self._lavalink._logger.warning('[NODE-{}] There was a general exception while trying to connect to '
+                                               'the remote server. e: {}'.format(self._node.name, str(e)))
                 backoff = min(10 * attempt, 60)
                 await asyncio.sleep(backoff)
             else:
